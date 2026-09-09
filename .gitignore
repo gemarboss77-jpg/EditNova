@@ -1,0 +1,52 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+*.aar
+*.dex
+
+# Java / Kotlin build outputs
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle build outputs and caches (NOT the wrapper folder itself — that stays tracked)
+.gradle/
+build/
+app/build/
+
+# Local configuration (machine-specific SDK path — never portable, never committed)
+local.properties
+
+# Android Studio / IntelliJ project files
+.idea/
+*.iml
+*.ipr
+*.iws
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystores and signing — never commit real signing material
+*.jks
+*.keystore
+keystore.properties
+
+# Firebase — not yet integrated, but if/when it is, the real config is per-developer
+# and must never be committed
+google-services.json
+
+# Log/output files
+*.log
+output.json
+
+# OS-specific junk files
+.DS_Store
+Thumbs.db
+
+# Proguard/R8 mapping (regenerated per release build, not source)
+mapping/

@@ -1,0 +1,13 @@
+<resources>
+    <!--
+        This is the "native" Android theme used before Compose takes over (e.g. during
+        the very first frame / window background). Our actual app theming (colors,
+        typography) lives in Kotlin under core/theme/ using Compose's Material3 theme system.
+    -->
+    <style name="Theme.EditNova" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/editnova_background</item>
+        <item name="android:statusBarColor">@color/editnova_background</item>
+        <item name="android:navigationBarColor">@color/editnova_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

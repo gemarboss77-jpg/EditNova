@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">EditNova</string>
+    <string name="tagline">Create Smarter. Edit Faster.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Create Without Limits</string>
+    <string name="onboarding_desc_1">Turn raw footage into professional videos with powerful, easy-to-use editing tools.</string>
+    <string name="onboarding_title_2">Edit Smarter with AI</string>
+    <string name="onboarding_desc_2">Let AI handle auto edits, captions, and voiceovers so you can edit faster.</string>
+    <string name="onboarding_title_3">Your Ideas. Your Story.</string>
+    <string name="onboarding_desc_3">Bring your ideas to life and share your story with the world.</string>
+    <string name="get_started">Get Started</string>
+    <string name="skip">Skip</string>
+    <string name="next">Next</string>
+
+    <!-- Home -->
+    <string name="new_project">New Project</string>
+    <string name="recent_projects">Recent Projects</string>
+    <string name="ai_tools">AI Tools</string>
+    <string name="templates">Templates</string>
+    <string name="settings">Settings</string>
+    <string name="no_recent_projects">No projects yet. Start your first edit!</string>
+</resources>

@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -27,7 +29,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
 /** Visual width of each trim handle. */
@@ -131,7 +132,7 @@ fun VideoTimeline(
         if (endX < widthPx) {
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(endX.toInt(), 0) }
+                    .offset(x = with(density) { endX.toDp() }, y = 0.dp)
                     .width(with(density) { (widthPx - endX).toDp() })
                     .fillMaxHeight()
                     .background(Color.Black.copy(alpha = 0.55f))
@@ -141,22 +142,23 @@ fun VideoTimeline(
         // --- Start trim handle ---
         val latestTrimStart = rememberUpdatedState(trimStartMs)
         val latestDuration = rememberUpdatedState(durationMs)
+        val latestWidthPx = rememberUpdatedState(widthPx)
         var startDragX by remember { mutableStateOf(startX) }
         Box(
             modifier = Modifier
-                .offset { IntOffset((startX - handleWidthPx / 2f).toInt(), 0) }
+                .offset(x = with(density) { (startX - handleWidthPx / 2f).toDp() }, y = 0.dp)
                 .width(HANDLE_WIDTH)
                 .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(3.dp))
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = {
-                            startDragX = (latestTrimStart.value.toFloat() / latestDuration.value.toFloat()) * size.width
+                            startDragX = (latestTrimStart.value.toFloat() / latestDuration.value.toFloat()) * latestWidthPx.value
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-                            startDragX = (startDragX + dragAmount.x).coerceIn(0f, size.width.toFloat())
-                            onTrimStartChange(((startDragX / size.width) * latestDuration.value).toLong())
+                            startDragX = (startDragX + dragAmount.x).coerceIn(0f, latestWidthPx.value)
+                            onTrimStartChange(((startDragX / latestWidthPx.value) * latestDuration.value).toLong())
                         }
                     )
                 }
@@ -167,19 +169,19 @@ fun VideoTimeline(
         var endDragX by remember { mutableStateOf(endX) }
         Box(
             modifier = Modifier
-                .offset { IntOffset((endX - handleWidthPx / 2f).toInt(), 0) }
+                .offset(x = with(density) { (endX - handleWidthPx / 2f).toDp() }, y = 0.dp)
                 .width(HANDLE_WIDTH)
                 .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(3.dp))
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = {
-                            endDragX = (latestTrimEnd.value.toFloat() / latestDuration.value.toFloat()) * size.width
+                            endDragX = (latestTrimEnd.value.toFloat() / latestDuration.value.toFloat()) * latestWidthPx.value
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-                            endDragX = (endDragX + dragAmount.x).coerceIn(0f, size.width.toFloat())
-                            onTrimEndChange(((endDragX / size.width) * latestDuration.value).toLong())
+                            endDragX = (endDragX + dragAmount.x).coerceIn(0f, latestWidthPx.value)
+                            onTrimEndChange(((endDragX / latestWidthPx.value) * latestDuration.value).toLong())
                         }
                     )
                 }
@@ -191,19 +193,19 @@ fun VideoTimeline(
         var playheadDragX by remember { mutableStateOf(playheadX) }
         Box(
             modifier = Modifier
-                .offset { IntOffset(playheadX.toInt(), 0) }
+                .offset(x = with(density) { playheadX.toDp() }, y = 0.dp)
                 .width(PLAYHEAD_WIDTH)
                 .fillMaxHeight()
                 .background(Color.White)
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = {
-                            playheadDragX = (latestPosition.value.toFloat() / latestDuration.value.toFloat()) * size.width
+                            playheadDragX = (latestPosition.value.toFloat() / latestDuration.value.toFloat()) * latestWidthPx.value
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-                            playheadDragX = (playheadDragX + dragAmount.x).coerceIn(0f, size.width.toFloat())
-                            onScrub(((playheadDragX / size.width) * latestDuration.value).toLong())
+                            playheadDragX = (playheadDragX + dragAmount.x).coerceIn(0f, latestWidthPx.value)
+                            onScrub(((playheadDragX / latestWidthPx.value) * latestDuration.value).toLong())
                         }
                     )
                 }

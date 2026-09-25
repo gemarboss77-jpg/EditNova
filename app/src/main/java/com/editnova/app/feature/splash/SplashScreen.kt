@@ -90,7 +90,7 @@ fun SplashScreen(
             drawRect(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        AccentVioletStart.copy(alpha = glowAlpha),
+                        AccentVioletStart.copy(alpha = glowAlpha.value),
                         AccentCyanEnd.copy(alpha = 0f)
                     ),
                     center = Offset(size.width / 2f, size.height * 0.4f),

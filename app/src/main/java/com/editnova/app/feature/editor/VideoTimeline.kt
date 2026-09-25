@@ -110,7 +110,7 @@ fun VideoTimeline(
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .weight(1f)
+                        
                             .fillMaxHeight()
                     )
                 }

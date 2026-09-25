@@ -74,7 +74,7 @@ fun SplashScreen(
     // A slow, looping, low-key glow behind the logo — subtle and lightweight (a single
     // animated float driving a radial gradient), not a heavy particle/video effect.
     val infiniteTransition = rememberInfiniteTransition(label = "splash_glow")
-    val glowAlpha by infiniteTransition.animateFloat(
+    val glowAlpha = infiniteTransition.animateFloat(
         initialValue = 0.15f,
         targetValue = 0.35f,
         animationSpec = infiniteRepeatable(

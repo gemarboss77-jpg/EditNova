@@ -1,9 +1,19 @@
 package com.editnova.app.feature.editor
 
 import android.graphics.Bitmap
+import java.io.File
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.round
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +34,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,9 +60,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.editnova.app.core.theme.EditNovaSpacing
+import com.editnova.app.core.export.VideoExportManager
 import com.editnova.app.core.util.formatDurationMs
 import com.editnova.app.domain.media.MediaType
 import com.editnova.app.domain.media.SelectedMedia
@@ -76,10 +90,22 @@ import com.editnova.app.domain.media.SelectedMedia
 fun EditorPreviewScreen(
     media: SelectedMedia?,
     onBack: () -> Unit,
+    onDone: () -> Unit,
     viewModel: EditorViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val exportManager = remember { VideoExportManager(context) }
+
+    fun createExportFile(): File {
+        val exportDir = File(context.filesDir, "exports")
+        exportDir.mkdirs()
+        return File(exportDir, "EditNova_${System.currentTimeMillis()}.mp4")
+    }
+
+    var showTextDialog by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    var newText by remember { mutableStateOf("") }
 
     LaunchedEffect(media) {
         if (media != null) viewModel.setMedia(media) else viewModel.setMissingMedia()
@@ -109,9 +135,78 @@ fun EditorPreviewScreen(
         }
     }
 
+    if (showTextDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showTextDialog = false
+                newText = ""
+            },
+            title = { Text("Add Text") },
+            text = {
+                TextField(
+                    value = newText,
+                    onValueChange = { newText = it },
+                    label = { Text("Enter text") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.addTextLayer(newText)
+                        showTextDialog = false
+                        newText = ""
+                    },
+                    enabled = newText.trim().isNotEmpty()
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showTextDialog = false
+                        newText = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { EditorTopBar(onBack = onBack) }
+        topBar = {
+            EditorTopBar(
+                onBack = onBack,
+                onDone = {
+                    if (isExporting) return@EditorTopBar
+
+                    if (media == null || media.type != MediaType.VIDEO) {
+                        onDone()
+                    } else {
+                        isExporting = true
+
+                        val outputFile = createExportFile()
+
+                        exportManager.export(
+                            inputUri = media.uri,
+                            segments = uiState.effectiveSegments,
+                            outputFile = outputFile,
+                            onCompleted = {
+                                isExporting = false
+                                onDone()
+                            },
+                            onError = {
+                                isExporting = false
+                            }
+                        )
+                    }
+                },
+                isExporting = isExporting
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -162,6 +257,31 @@ fun EditorPreviewScreen(
                         }
                     }
                 }
+
+                // --- Text overlays ---
+                uiState.textLayers.forEach { layer ->
+                    DraggableTextLayer(
+                        layer = layer,
+                        selected = uiState.selectedTextLayerId == layer.id,
+                        onSelect = { viewModel.selectTextLayer(layer.id) },
+                        onMove = { x, y ->
+                            viewModel.updateTextLayerPosition(layer.id, x, y)
+                        }
+                    )
+                }
+            }
+
+            // --- Delete selected text overlay ---
+            uiState.selectedTextLayerId?.let { selectedId ->
+                TextButton(
+                    onClick = { viewModel.removeTextLayer(selectedId) },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text(
+                        text = "Delete Text",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
 
             // --- Video controls: video only, and only once there's no error ---
@@ -193,25 +313,47 @@ fun EditorPreviewScreen(
                 // apply, so fall back to the simple non-interactive placeholder.
                 TimelinePlaceholder(media = media, durationMs = uiState.durationMs)
             }
+
+            EditorToolsBar(
+                onTrim = { },
+                onSplit = { viewModel.splitAtPlayhead() },
+                onCrop = { },
+                onFilter = { },
+                onMusic = { },
+                onText = { showTextDialog = true },
+                onSpeed = { },
+                onVolume = { }
+            )
         }
     }
 }
 
-/** Top bar: back button, fixed "New Project" title, and an options placeholder icon. */
+/** Top bar: back button, title, and Done action. */
 @Composable
-private fun EditorTopBar(onBack: () -> Unit) {
+private fun EditorTopBar(
+    onBack: () -> Unit,
+    onDone: () -> Unit,
+    isExporting: Boolean = false
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = EditNovaSpacing.xs, vertical = EditNovaSpacing.xs)
+            .padding(
+                horizontal = EditNovaSpacing.xs,
+                vertical = EditNovaSpacing.xs
+            )
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterStart)
+        ) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
+
         Text(
             text = "New Project",
             style = MaterialTheme.typography.titleMedium,
@@ -219,16 +361,23 @@ private fun EditorTopBar(onBack: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.align(Alignment.Center)
         )
-        IconButton(
-            // Placeholder only — no options menu exists yet.
-            onClick = { },
+
+        TextButton(
+            onClick = onDone,
+            enabled = !isExporting,
             modifier = Modifier.align(Alignment.CenterEnd)
         ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = "More options",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
+            if (isExporting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = "Done",
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -442,5 +591,101 @@ private fun TimelinePlaceholder(media: SelectedMedia, durationMs: Long) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun EditorToolsBar(
+    onTrim: () -> Unit,
+    onSplit: () -> Unit,
+    onCrop: () -> Unit,
+    onFilter: () -> Unit,
+    onMusic: () -> Unit,
+    onText: () -> Unit,
+    onSpeed: () -> Unit,
+    onVolume: () -> Unit
+) {
+    val tools = listOf(
+        "Trim" to onTrim,
+        "Split" to onSplit,
+        "Crop" to onCrop,
+        "Filter" to onFilter,
+        "Music" to onMusic,
+        "Text" to onText,
+        "Speed" to onSpeed,
+        "Volume" to onVolume
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(
+                horizontal = EditNovaSpacing.sm,
+                vertical = EditNovaSpacing.xs
+            ),
+        horizontalArrangement = Arrangement.spacedBy(EditNovaSpacing.xs)
+    ) {
+        tools.forEach { (label, action) ->
+            TextButton(onClick = action) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DraggableTextLayer(
+    layer: com.editnova.app.domain.project.TextLayer,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    onMove: (Float, Float) -> Unit
+) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val widthPx = constraints.maxWidth.toFloat().coerceAtLeast(1f)
+        val heightPx = constraints.maxHeight.toFloat().toFloat().coerceAtLeast(1f)
+
+        Text(
+            text = layer.text,
+            color = Color(layer.colorArgb.toULong()),
+            fontSize = layer.fontSizeSp.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .offset {
+                    IntOffset(
+                        (layer.x.coerceIn(0f, 1f) * widthPx).toInt(),
+                        (layer.y.coerceIn(0f, 1f) * heightPx).toInt()
+                    )
+                }
+                .clickable { onSelect() }
+                .pointerInput(layer.id) {
+                    detectDragGestures(
+                        onDragStart = { onSelect() }
+                    ) { change, dragAmount ->
+                        change.consume()
+
+                        val newX = layer.x + dragAmount.x / widthPx
+                        val newY = layer.y + dragAmount.y / heightPx
+
+                        onMove(newX, newY)
+                    }
+                }
+                .then(
+                    if (selected) {
+                        Modifier.background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
+                .padding(EditNovaSpacing.sm)
+        )
     }
 }

@@ -13,6 +13,8 @@ sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
     data object Home : Screen("home")
     data object Premium : Screen("premium")
+    data object Privacy : Screen("privacy")
+    data object Terms : Screen("terms")
 
     /**
      * Editor Preview screen (Step 3). The selected media is passed as two route

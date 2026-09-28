@@ -2,6 +2,7 @@ package com.editnova.app.feature.editor
 
 import com.editnova.app.domain.media.SelectedMedia
 import com.editnova.app.domain.project.ClipSegment
+import com.editnova.app.domain.project.TextLayer
 
 /**
  * EditorUiState — everything the Editor Preview screen needs to render, kept separate
@@ -40,7 +41,11 @@ data class EditorUiState(
      */
     val segments: List<ClipSegment> = emptyList(),
     /** The segment currently selected for Delete, or null if none is selected. */
-    val selectedSegmentId: String? = null
+    val selectedSegmentId: String? = null,
+    /** Text overlays currently placed on the editor preview. */
+    val textLayers: List<TextLayer> = emptyList(),
+    /** Currently selected text overlay, if any. */
+    val selectedTextLayerId: String? = null
 ) {
     /** The length of the Step 4A trim range — what would be exported before any split. */
     val trimmedDurationMs: Long get() = (trimEndMs - trimStartMs).coerceAtLeast(0L)

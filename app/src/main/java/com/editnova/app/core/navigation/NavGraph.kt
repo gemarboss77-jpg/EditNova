@@ -66,7 +66,9 @@ fun EditNovaNavGraph(
         composable(Screen.Home.route) {
             HomeScreen(
                 onOpenPremium = { navController.navigate(Screen.Premium.route) },
-                onOpenEditor = { media -> navController.navigate(Screen.Editor.buildRoute(media)) }
+                onOpenEditor = { media -> navController.navigate(Screen.Editor.buildRoute(media)) },
+                onOpenPrivacy = { navController.navigate(Screen.Privacy.route) },
+                onOpenTerms = { navController.navigate(Screen.Terms.route) }
             )
         }
 
@@ -98,7 +100,8 @@ fun EditNovaNavGraph(
 
             EditorPreviewScreen(
                 media = media,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
             )
         }
     }

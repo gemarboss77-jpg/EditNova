@@ -52,7 +52,11 @@ private data class SettingsItem(
  * no export feature exists yet.
  */
 @Composable
-fun SettingsScreen(onOpenPremium: () -> Unit) {
+fun SettingsScreen(
+    onOpenPremium: () -> Unit,
+    onOpenPrivacy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {}
+) {
     val watermarkOn = AppContainer.watermarkPolicy.shouldApplyWatermark()
     val watermarkSubtitle = if (watermarkOn) {
         "On — Free plan exports include the EditNova watermark"
@@ -79,7 +83,13 @@ fun SettingsScreen(onOpenPremium: () -> Unit) {
         items(items) { item ->
             SettingsRow(
                 item = item,
-                onClick = { if (item.title == "Subscription") onOpenPremium() }
+                onClick = {
+    when (item.title) {
+        "Subscription" -> onOpenPremium()
+        "Privacy" -> onOpenPrivacy()
+        "Terms" -> onOpenTerms()
+    }
+}
             )
         }
     }

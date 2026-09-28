@@ -86,7 +86,12 @@ private val templateNames = listOf("Reels Intro", "Vlog Cut", "Product Promo", "
  * Templates do not do any real work yet (see each section's comments).
  */
 @Composable
-fun HomeScreen(onOpenPremium: () -> Unit, onOpenEditor: (SelectedMedia) -> Unit) {
+fun HomeScreen(
+    onOpenPremium: () -> Unit,
+    onOpenEditor: (SelectedMedia) -> Unit,
+    onOpenPrivacy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {}
+) {
     var selectedTab by remember { mutableStateOf(HomeTab.HOME) }
 
     // Reads real (but always-Free-in-Step-2) state from the architecture built in
@@ -131,7 +136,11 @@ fun HomeScreen(onOpenPremium: () -> Unit, onOpenEditor: (SelectedMedia) -> Unit)
                     HomeTab.PROJECTS -> ProjectsTabContent()
                     HomeTab.AI_TOOLS -> AiToolsTabContent()
                     HomeTab.TEMPLATES -> TemplatesTabContent()
-                    HomeTab.SETTINGS -> SettingsScreen(onOpenPremium = onOpenPremium)
+                    HomeTab.SETTINGS -> SettingsScreen(
+                        onOpenPremium = onOpenPremium,
+                        onOpenPrivacy = onOpenPrivacy,
+                        onOpenTerms = onOpenTerms
+                    )
                 }
             }
         }

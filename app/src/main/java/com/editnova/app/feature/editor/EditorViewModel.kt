@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.editnova.app.domain.media.MediaType
 import com.editnova.app.domain.media.SelectedMedia
 import com.editnova.app.domain.project.ClipSegment
+import com.editnova.app.domain.project.TextLayer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -257,7 +258,57 @@ class EditorViewModel : ViewModel() {
         }
     }
 
+    /** Adds a new text layer to the current editor state. */
+    fun addTextLayer(text: String) {
+        val cleanedText = text.trim()
+        if (cleanedText.isEmpty()) return
+
+        _uiState.update { state ->
+            state.copy(
+                textLayers = state.textLayers + TextLayer(
+                    id = UUID.randomUUID().toString(),
+                    text = cleanedText
+                )
+            )
+        }
+    }
+
+    /** Removes a text layer by its id. */
+    fun removeTextLayer(id: String) {
+        _uiState.update { state ->
+            state.copy(
+                textLayers = state.textLayers.filterNot { it.id == id },
+                selectedTextLayerId = if (state.selectedTextLayerId == id) null else state.selectedTextLayerId
+            )
+        }
+    }
+
+    /** Selects a text layer for editing or deletion. */
+    fun selectTextLayer(id: String) {
+        _uiState.update { state ->
+            state.copy(selectedTextLayerId = id)
+        }
+    }
+
     /** Called when ExoPlayer reports a playback error, or Coil fails to load an image. */
+    /** Updates the normalized position of a text overlay. */
+    fun updateTextLayerPosition(id: String, x: Float, y: Float) {
+        _uiState.update { state ->
+            state.copy(
+                textLayers = state.textLayers.map { layer ->
+                    if (layer.id == id) {
+                        layer.copy(
+                            x = x.coerceIn(0f, 1f),
+                            y = y.coerceIn(0f, 1f)
+                        )
+                    } else {
+                        layer
+                    }
+                }
+            )
+        }
+    }
+
     fun onError(message: String) {
         _uiState.update { it.copy(isLoading = false, error = message) }
     }

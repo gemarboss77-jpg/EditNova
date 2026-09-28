@@ -1,6 +1,8 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.editnova.app.feature.onboarding
 import androidx.compose.foundation.ExperimentalFoundationApi
-@file:OptIn(ExperimentalFoundationApi::class)
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

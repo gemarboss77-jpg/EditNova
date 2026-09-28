@@ -82,6 +82,7 @@ dependencies {
     // Used only by the Editor Preview screen (Step 3) to play back a picked video.
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1") // Provides PlayerView, embedded via AndroidView.
+    implementation("androidx.media3:media3-transformer:1.3.1") // Video export and transformations.
 
     // --- Image loading (Coil) ---
     // Needed to safely display an arbitrary picked photo (any size) from a content URI
